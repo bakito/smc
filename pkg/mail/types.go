@@ -10,21 +10,26 @@ type client struct {
 	config Config
 }
 
+// Config mail client config
 type Config struct {
-	Host     string
-	Port     uint
-	User     string
-	Password string
+	Host          string
+	Port          uint
+	User          string
+	Password      string
+	SkipTLSVerify bool
 }
 
+// ServerName get host and port
 func (c *Config) ServerName() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
+// WithAuth true, if password is set
 func (c *Config) WithAuth() bool {
 	return c.Password != ""
 }
 
+// AuthUser if user ist set return the user, else return the provided from
 func (c *Config) AuthUser(from string) string {
 	if c.User != "" {
 		return c.User
@@ -32,6 +37,7 @@ func (c *Config) AuthUser(from string) string {
 	return from
 }
 
+// Message an email message content
 type Message struct {
 	From        string
 	To          []string
@@ -48,9 +54,9 @@ func (m *Message) trim() {
 	m.Subject = strings.TrimSpace(m.Subject)
 	m.ContentType = strings.TrimSpace(m.ContentType)
 	m.Encoding = strings.TrimSpace(m.Encoding)
-	trim(m.To)
-	trim(m.CC)
-	trim(m.BCC)
+	m.To = splitAndTrim(m.To)
+	m.CC = splitAndTrim(m.CC)
+	m.BCC = splitAndTrim(m.BCC)
 }
 
 func (m *Message) message() []byte {
@@ -64,6 +70,14 @@ func (m *Message) message() []byte {
 	b.WriteString("To: ")
 	b.WriteString(strings.Join(m.To, ","))
 	b.WriteString("\r\n")
+
+	if len(m.CC) > 0 {
+		b.WriteString("CC: ")
+		b.WriteString(strings.Join(m.CC, ","))
+		b.WriteString("\r\n")
+	}
+
+	// BCC is not added to the headers
 
 	b.WriteString("Subject: ")
 	b.WriteString(m.Subject)
@@ -81,8 +95,15 @@ func (m *Message) message() []byte {
 	return b.Bytes()
 }
 
-func trim(sl []string) {
-	for i, s := range sl {
-		sl[i] = strings.TrimSpace(s)
+func splitAndTrim(in []string) []string {
+	out := []string{}
+	for _, s := range in {
+		for _, part := range strings.Split(s, " ") {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				out = append(out, trimmed)
+			}
+		}
 	}
+	return out
 }

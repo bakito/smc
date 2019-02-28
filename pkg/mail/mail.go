@@ -5,6 +5,7 @@ import (
 	"net/smtp"
 )
 
+// NewClient create a new client
 func NewClient(c Config) Client {
 	return &client{config: c}
 }
@@ -13,10 +14,8 @@ func (c *client) Send(m Message) error {
 
 	m.trim()
 
-	// Gmail will reject connection if it's not secure
-	// TLS config
 	tlsconfig := &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: c.config.SkipTLSVerify,
 		ServerName:         c.config.Host,
 	}
 
@@ -46,6 +45,20 @@ func (c *client) Send(m Message) error {
 	for _, addr := range m.To {
 		if err = client.Rcpt(addr); err != nil {
 			return err
+		}
+	}
+	if len(m.CC) > 0 {
+		for _, addr := range m.CC {
+			if err = client.Rcpt(addr); err != nil {
+				return err
+			}
+		}
+	}
+	if len(m.BCC) > 0 {
+		for _, addr := range m.BCC {
+			if err = client.Rcpt(addr); err != nil {
+				return err
+			}
 		}
 	}
 	w, err := client.Data()
