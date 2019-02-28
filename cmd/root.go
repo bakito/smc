@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/bakito/smc/pkg/mail"
-	"github.com/bakito/smc/version"
 	"github.com/spf13/cobra"
 )
 
@@ -22,11 +21,12 @@ var (
 	port        uint
 	username    string
 	password    string
+	version     string
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: version.Version,
+	Version: version,
 	Use:     "smc",
 	Short:   "Simple Mail Client",
 	Long:    "A simple CLI to send smtp mails",
