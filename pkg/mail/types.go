@@ -16,6 +16,7 @@ type Config struct {
 	Port          uint
 	User          string
 	Password      string
+	NoTLS         bool
 	SkipTLSVerify bool
 }
 

@@ -18,6 +18,7 @@ var (
 	contentType   string
 	encoding      string
 	host          string
+	noTLS         bool
 	skipTLSVerify bool
 	port          uint
 	username      string
@@ -36,6 +37,7 @@ var rootCmd = &cobra.Command{
 		c := mail.NewClient(mail.Config{
 			Host:          host,
 			Port:          port,
+			NoTLS:         noTLS,
 			SkipTLSVerify: skipTLSVerify,
 			User:          username,
 			Password:      password,
@@ -83,6 +85,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&host, "host", "", "The smtp host")
 	rootCmd.MarkPersistentFlagRequired("host")
 	rootCmd.PersistentFlags().UintVarP(&port, "port", "p", 465, "The smtp port")
+	rootCmd.PersistentFlags().BoolVar(&noTLS, "no-tls", false, "Disable TLS")
 	rootCmd.PersistentFlags().BoolVar(&skipTLSVerify, "skip-tls-verify", true, "Skip TLS verify")
 
 	rootCmd.PersistentFlags().StringVar(&username, "username", "", "smtp username (if different from from address)")

@@ -14,17 +14,7 @@ func (c *client) Send(m Message) error {
 
 	m.trim()
 
-	tlsconfig := &tls.Config{
-		InsecureSkipVerify: c.config.SkipTLSVerify,
-		ServerName:         c.config.Host,
-	}
-
-	conn, err := tls.Dial("tcp", c.config.ServerName(), tlsconfig)
-	if err != nil {
-		return err
-	}
-
-	client, err := smtp.NewClient(conn, c.config.Host)
+	client, err := smtpClient(c.config)
 	if err != nil {
 		return err
 	}
@@ -34,33 +24,25 @@ func (c *client) Send(m Message) error {
 	if c.config.WithAuth() {
 
 		auth := smtp.PlainAuth("", c.config.AuthUser(m.From), c.config.Password, c.config.Host)
-		if err = client.Auth(auth); err != nil {
+		if err := client.Auth(auth); err != nil {
 			return err
 		}
 	}
 
-	if err = client.Mail(m.From); err != nil {
+	if err := client.Mail(m.From); err != nil {
 		return err
 	}
-	for _, addr := range m.To {
-		if err = client.Rcpt(addr); err != nil {
-			return err
-		}
+
+	if err := addRcpt(client, m.To); err != nil {
+		return err
 	}
-	if len(m.CC) > 0 {
-		for _, addr := range m.CC {
-			if err = client.Rcpt(addr); err != nil {
-				return err
-			}
-		}
+	if err := addRcpt(client, m.CC); err != nil {
+		return err
 	}
-	if len(m.BCC) > 0 {
-		for _, addr := range m.BCC {
-			if err = client.Rcpt(addr); err != nil {
-				return err
-			}
-		}
+	if err := addRcpt(client, m.BCC); err != nil {
+		return err
 	}
+
 	w, err := client.Data()
 	if err != nil {
 		return err
@@ -74,4 +56,31 @@ func (c *client) Send(m Message) error {
 		return err
 	}
 	return client.Quit()
+}
+
+func addRcpt(c *smtp.Client, a []string) error {
+	for _, addr := range a {
+		if err := c.Rcpt(addr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func smtpClient(c Config) (*smtp.Client, error) {
+	if c.NoTLS {
+		return smtp.Dial(c.ServerName())
+	}
+
+	tlsconfig := &tls.Config{
+		InsecureSkipVerify: c.SkipTLSVerify,
+		ServerName:         c.Host,
+	}
+
+	conn, err := tls.Dial("tcp", c.ServerName(), tlsconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return smtp.NewClient(conn, c.Host)
 }
