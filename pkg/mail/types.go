@@ -99,7 +99,7 @@ func (m *Message) message() []byte {
 func splitAndTrim(in []string) []string {
 	out := []string{}
 	for _, s := range in {
-		for _, part := range strings.Split(s, " ") {
+		for part := range strings.SplitSeq(s, " ") {
 			trimmed := strings.TrimSpace(part)
 			if trimmed != "" {
 				out = append(out, trimmed)
